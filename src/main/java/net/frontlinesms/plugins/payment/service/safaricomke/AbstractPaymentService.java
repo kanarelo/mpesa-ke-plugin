@@ -7,23 +7,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.frontlinesms.FrontlineUtils;
-import net.frontlinesms.data.domain.FrontlineMessage;
+import net.frontlinesms.data.domain.SmsMessage;
 import net.frontlinesms.data.domain.PersistableSettings;
 import net.frontlinesms.data.events.EntitySavedNotification;
 import net.frontlinesms.data.repository.ContactDao;
-import net.frontlinesms.events.EventBus;
-import net.frontlinesms.events.EventObserver;
 import net.frontlinesms.events.FrontlineEventNotification;
-import net.frontlinesms.messaging.sms.modem.SmsModem;
 import net.frontlinesms.plugins.payment.service.PaymentJob;
 import net.frontlinesms.plugins.payment.service.PaymentJobProcessor;
 import net.frontlinesms.plugins.payment.service.PaymentService;
 import net.frontlinesms.plugins.payment.service.PaymentServiceException;
 import net.frontlinesms.plugins.payment.service.PaymentStatus;
-import net.frontlinesms.serviceconfig.ConfigurableService;
-import net.frontlinesms.serviceconfig.PasswordString;
-import net.frontlinesms.serviceconfig.SmsModemReference;
-import net.frontlinesms.serviceconfig.StructuredProperties;
 
 import org.apache.log4j.Logger;
 import org.creditsms.plugins.paymentview.PaymentViewPluginController;
@@ -37,11 +30,8 @@ import org.creditsms.plugins.paymentview.data.repository.LogMessageDao;
 import org.creditsms.plugins.paymentview.data.repository.OutgoingPaymentDao;
 import org.creditsms.plugins.paymentview.data.repository.PaymentServiceSettingsDao;
 import org.creditsms.plugins.paymentview.data.repository.TargetDao;
-import org.smslib.CService;
-import org.smslib.SMSLibDeviceException;
-import org.smslib.handler.ATHandler.SynchronizedWorkflow;
 
-public abstract class AbstractPaymentService implements PaymentService, EventObserver {
+public abstract class AbstractPaymentService extends IntentReceiver implements PaymentService {
 //> STATIC CONSTANTS
 	/** Prefix attached to every property name. */
 	private static final String PROPERTY_PREFIX = "plugins.payment.mpesa.";
@@ -51,7 +41,6 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 	protected static final String PROPERTY_BALANCE_AMOUNT = PROPERTY_PREFIX + "balance.amount";
 	protected static final String PROPERTY_BALANCE_DATE_TIME = PROPERTY_PREFIX + "balance.timestamp";
 	protected static final String PROPERTY_BALANCE_UPDATE_METHOD = PROPERTY_PREFIX + "balance.update.method";
-	protected static final String PROPERTY_MODEM_SERIAL = PROPERTY_PREFIX + "modem.serial";
 	protected static final String PROPERTY_SIM_IMSI = PROPERTY_PREFIX + "sim.imsi";
 	protected static final String PROPERTY_OUTGOING_ENABLED = PROPERTY_PREFIX + "outgoing.enabled";
 	protected static final String PROPERTY_BALANCE_ENABLED = PROPERTY_PREFIX + "balance.enabled";
@@ -59,8 +48,6 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 //> INSTANCE PROPERTIES
 	protected Logger log = FrontlineUtils.getLogger(this.getClass());
 	protected TargetAnalytics targetAnalytics;
-	protected SmsModem smsModem;
-	protected EventBus eventBus;
 	protected PaymentJobProcessor outgoingJobProcessor;
 	protected PaymentJobProcessor incomingJobProcessor;
 	protected AccountDao accountDao;
@@ -76,7 +63,6 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 
 //> CONSTRUCTORS AND INITIALISERS
 	public void init(PaymentViewPluginController pluginController) throws PaymentServiceException {
-		setSmsModem(pluginController);
 		this.pluginController = pluginController;
 		this.accountDao = pluginController.getAccountDao();
 		this.clientDao = pluginController.getClientDao();
@@ -87,10 +73,7 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 		this.logDao = pluginController.getLogMessageDao();
 		this.contactDao = pluginController.getUiGeneratorController().getFrontlineController().getContactDao();
 		this.settingsDao = pluginController.getPaymentServiceSettingsDao();
-		
-		this.eventBus = pluginController.getEventBus();
-		eventBus.registerObserver(this);
-		
+				
 		this.incomingJobProcessor = new PaymentJobProcessor(this);
 		this.incomingJobProcessor.start();
 		
@@ -103,48 +86,7 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 	public void setLog(Logger log) {
 		this.log = log;
 	}
-
-	protected void initIfRequired() throws SMSLibDeviceException, IOException {
-		// For now, we assume that init is always required.  If there is a clean way
-		// of identifying when it is and is not, we should perhaps implement this.
-		smsModem.getCService().getAtHandler().stkInit();
-	}
-	
-//> INSTANCE (TRANSIENT) ACCESSORS
-	/** @return the settings attached to this instance. */
-	public PersistableSettings getSettings() {
-		return settings;
-	}
-	public void setSettings(PersistableSettings settings) {
-		this.settings = settings;
-	}
-	public boolean isRestartRequired(PersistableSettings newSettings) {
-		// return true if any user-modified settings have changed
-		return hasChanged(newSettings, PROPERTY_MODEM_SERIAL) ||
-				hasChanged(newSettings, PROPERTY_PIN) ||
-				hasChanged(newSettings, PROPERTY_OUTGOING_ENABLED) ||
-				hasChanged(newSettings, PROPERTY_BALANCE_ENABLED);
-	}
-	
-	private boolean hasChanged(PersistableSettings newSettings, String propertyKey) {
-		return !newSettings.get(propertyKey).equals(settings.get(propertyKey));
-	}
-
-	private void setSmsModem(PaymentViewPluginController pluginController) throws PaymentServiceException {
-		String serial = getModemSerial();
-		for(SmsModem m : pluginController.getUiGeneratorController().getFrontlineController().getSmsServiceManager().getSmsModems()) {
-			if(m.getSerial().equals(serial) && m.isConnected()) {
-				smsModem = m;
-				return;
-			}
-		}
-		throw new PaymentServiceException("No CService found for serial: " + serial);
-	}
-	
-	public void setSmsModem(SmsModem smsModem) {
-		this.smsModem = smsModem;
-	}
-	
+		
 //> PERSISTENT PROPERTY ACCESSORS
 	public String getBalanceConfirmationCode() {
 		return getProperty(PROPERTY_BALANCE_CONFIRMATION_CODE, "");
@@ -170,9 +112,6 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 	public void setBalanceUpdateMethod(String balanceUpdateMethod) {
 		setProperty(PROPERTY_BALANCE_UPDATE_METHOD, balanceUpdateMethod);
 	}
-	public String getModemSerial() {
-		return getProperty(PROPERTY_MODEM_SERIAL, SmsModemReference.class).getSerial();
-	}
 	public String getPin() {
 		return getProperty(PROPERTY_PIN, PasswordString.class).getValue();
 	}
@@ -195,15 +134,7 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 	public void setCheckBalanceEnabled(boolean checkBalanceEnabled) {
 		this.settings.set(PROPERTY_BALANCE_ENABLED, checkBalanceEnabled);
 	}
-	
-	public String getSimImsi() {
-		return getProperty(PROPERTY_SIM_IMSI, "");
-	}
-	
-	public void setSimImsi(String simImsi) {
-		setProperty(PROPERTY_SIM_IMSI, simImsi);
-	}
-	
+		
 	void updateBalance(BigDecimal amount, String confirmationCode, Date timestamp, String method) {
 		setBalanceAmount(amount);
 		setBalanceConfirmationCode(confirmationCode);
@@ -218,51 +149,16 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 	}
 	
 	public void startService() throws PaymentServiceException {
-		if(smsModem == null) throw new PaymentServiceException("Cannot start payment service with null CService.");
-		
-		// if this is the first start, set and save the SIM IMSI
-		if(getSimImsi().length()==0) {
-			setSimImsi(smsModem.getImsiNumber());
-			settingsDao.updateServiceSettings(settings);
-		}
-		
-		final CService cService = smsModem.getCService();
-		
 		queueOutgoingJob(new PaymentJob() {
 			public void run() {
-				try {
-					cService.doSynchronized(new SynchronizedWorkflow<Object>() {
-						public Object run() throws SMSLibDeviceException, IOException {
-							updateStatus(PaymentStatus.CONFIGURE_STARTED);
-							if(cService.supportsStk()) {
-								cService.getAtHandler().stkInit();
-							}
-							updateStatus(PaymentStatus.CONFIGURE_COMPLETE);
-							return null;
-						}
-					});
-				} catch (Throwable t) {
-					t.printStackTrace();
-					logDao.error(t.getClass().getSimpleName() + " in configureModem()", t);
-					updateStatus(PaymentStatus.ERROR);
-				}
+				//Run ish
 			}
 		});
 	}
 
 	public void stopService() {
-		eventBus.unregisterObserver(this);
 		incomingJobProcessor.stop();
 		outgoingJobProcessor.stop();
-	}
-
-	public StructuredProperties getPropertiesStructure() {
-		StructuredProperties p = new StructuredProperties();
-		p.put(PROPERTY_PIN, new PasswordString(""));
-		p.put(PROPERTY_MODEM_SERIAL, new SmsModemReference(null));
-		p.put(PROPERTY_OUTGOING_ENABLED, true);
-		p.put(PROPERTY_BALANCE_ENABLED, true);
-		return p;
 	}
 
 //> EVENT OBSERVER METHODS
@@ -270,20 +166,20 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 	public void notify(final FrontlineEventNotification notification) {
 		if(notification instanceof EntitySavedNotification) {
 			final Object entity = ((EntitySavedNotification) notification).getDatabaseEntity();
-			if (entity instanceof FrontlineMessage) {
-				final FrontlineMessage message = (FrontlineMessage) entity;
+			if (entity instanceof SmsMessage) {
+				final SmsMessage message = (SmsMessage) entity;
 				processMessage(message);
 			}
 		}
 	}
 	
 //> ABSTRACT SAFARICOM SERVICE METHODS
-	protected abstract void processMessage(final FrontlineMessage message);
-	abstract Date getTimePaid(FrontlineMessage message);
+	protected abstract void processMessage(final SmsMessage message);
+	abstract Date getTimePaid(SmsMessage message);
 	abstract boolean isMessageTextValid(String message);
-	abstract Account getAccount(FrontlineMessage message);
-	abstract String getPaymentBy(FrontlineMessage message);
-	protected abstract boolean isValidBalanceMessage(FrontlineMessage message);
+	abstract Account getAccount(SmsMessage message);
+	abstract String getPaymentBy(SmsMessage message);
+	protected abstract boolean isValidBalanceMessage(SmsMessage message);
 
 //> UTILITY METHODS
 	void queueIncomingJob(PaymentJob job) {
@@ -306,7 +202,7 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 		this.settings.set(key, value);
 	}
 
-	protected String getFirstMatch(final FrontlineMessage message, final String regexMatcher) {
+	protected String getFirstMatch(final SmsMessage message, final String regexMatcher) {
 		return getFirstMatch(message.getTextContent(), regexMatcher);
 	}	
 	protected String getFirstMatch(final String string, final String regexMatcher) {
@@ -314,19 +210,12 @@ public abstract class AbstractPaymentService implements PaymentService, EventObs
 		matcher.find();
 		return matcher.group();
 	}
-
-	void registerToEventBus(final EventBus eventBus) {
-		if (eventBus != null) {
-			this.eventBus = eventBus;
-			this.eventBus.registerObserver(this);
-		}
-	}
 	
 	void updateStatus(PaymentStatus status) {
-		pluginController.updateStatusBar(status.toString());
+		//updateStatusBar(status.toString());
 	}
 	
 	void reportPaymentFromNewClient(IncomingPayment payment){
-		pluginController.reportPaymentByNewClient(payment.getPaymentBy(), payment.getAmountPaid());
+		///(payment.getPaymentBy(), payment.getAmountPaid());
 	}
 }

@@ -21,6 +21,7 @@ import org.creditsms.plugins.paymentview.data.domain.IncomingPayment;
 import org.creditsms.plugins.paymentview.data.domain.LogMessage;
 import org.creditsms.plugins.paymentview.data.domain.OutgoingPayment;
 import org.creditsms.plugins.paymentview.data.domain.Target;
+
 import org.smslib.CService;
 import org.smslib.SMSLibDeviceException;
 import org.smslib.handler.ATHandler.SynchronizedWorkflow;
@@ -195,19 +196,17 @@ public abstract class MpesaPaymentService extends AbstractPaymentService {
 		queueOutgoingJob(new PaymentJob() {
 			public void run() {
 				try {
-					cService.doSynchronized(new SynchronizedWorkflow<Object>() {
-						public Object run() throws SMSLibDeviceException, IOException {
-							initIfRequired();
-							updateStatus(PaymentStatus.CHECK_BALANCE);
-							final StkMenu mPesaMenu = getMpesaMenu();
-							final StkMenu myAccountMenu = (StkMenu) cService.stkRequest(mPesaMenu.getRequest("My account"));
-							final StkResponse getBalanceResponse = cService.stkRequest(myAccountMenu.getRequest("Show balance"));
-							
-							cService.stkRequest(((StkValuePrompt) getBalanceResponse).getRequest(), pin);
-							updateStatus(PaymentStatus.CHECK_COMPLETE);
-							return null;
-						}
-					});
+					public Object run() throws SMSLibDeviceException, IOException {
+						initIfRequired();
+						updateStatus(PaymentStatus.CHECK_BALANCE);
+						final StkMenu mPesaMenu = getMpesaMenu();
+						final StkMenu myAccountMenu = (StkMenu) cService.stkRequest(mPesaMenu.getRequest("My account"));
+						final StkResponse getBalanceResponse = cService.stkRequest(myAccountMenu.getRequest("Show balance"));
+						
+						cService.stkRequest(((StkValuePrompt) getBalanceResponse).getRequest(), pin);
+						updateStatus(PaymentStatus.CHECK_COMPLETE);
+						return null;
+					}
 					// TODO check finalResponse is OK
 					// TODO wait for response...
 				} catch (final SMSLibDeviceException ex) {
@@ -427,7 +426,6 @@ public abstract class MpesaPaymentService extends AbstractPaymentService {
 		actualBalance = actualBalance.setScale(2, BigDecimal.ROUND_HALF_DOWN);
 		expectedBalance = expectedBalance.setScale(2, BigDecimal.ROUND_HALF_DOWN);
 		if(expectedBalance.compareTo(new BigDecimal(0)) < 0) {
-			//Now we don't want Mathematical embarrassment... TODO explain what this comment means
 			log.error("Balance for: "+ this.toString() +" is much lower than expected: " + actualBalance + " instead of: "+ expectedBalance);
 		} else if(expectedBalance.equals(actualBalance)) {
 			log.info("No Fraud occured!");

@@ -6,14 +6,10 @@ import java.util.Date;
 
 import net.frontlinesms.data.domain.FrontlineMessage;
 import net.frontlinesms.plugins.payment.service.PaymentServiceException;
-import net.frontlinesms.plugins.payment.service.ui.PaymentServiceUiActionHandler;
-import net.frontlinesms.serviceconfig.ConfigurableServiceProperties;
-import net.frontlinesms.ui.UiGeneratorController;
 
 import org.creditsms.plugins.paymentview.data.domain.Account;
 import org.creditsms.plugins.paymentview.data.domain.OutgoingPayment;
 
-@ConfigurableServiceProperties(name="MPESA Kenya PayBill", icon="/icons/mpesa_ke_paybill.png")
 public class MpesaPayBillService extends MpesaPaymentService {
 	private static final String PAYBILL_REGEX = "[A-Z0-9]+ Confirmed.\\s+"
 			+ "on (([1-2]?[1-9]|[1-2]0|3[0-1])/([1-9]|1[0-2])/(1[1-3])) at ([1]?\\d:[0-5]\\d) (AM|PM)\\s+"
@@ -84,10 +80,6 @@ public class MpesaPayBillService extends MpesaPaymentService {
 	
 	public void makePayment(OutgoingPayment op) throws PaymentServiceException {
 		throw new PaymentServiceException("Making payments is not possible with a PayBill account.");
-	}
-	
-	public PaymentServiceUiActionHandler getServiceActionUiHandler(UiGeneratorController ui) {
-		return null;
 	}
 
 	@Override
