@@ -10,7 +10,7 @@ import org.synacor.cashtap.service.PaymentServiceException;
 import org.synacor.cashtap.models.Account;
 import org.synacor.cashtap.models.OutgoingPayment;
 
-public class MpesaPayBillService extends MpesaPaymentService {
+public class MpesaPayBillService extends AbstractMpesaPaymentService {
 	private static final String PAYBILL_REGEX = "[A-Z0-9]+ Confirmed.\\s+"
 			+ "on (([1-2]?[1-9]|[1-2]0|3[0-1])/([1-9]|1[0-2])/(1[1-3])) at ([1]?\\d:[0-5]\\d) (AM|PM)\\s+"
 			+ "Ksh[,|\\d]+(|.[\\d]{2}) received from ([A-Za-z ]+) 2547[\\d]{8}.\\s+"

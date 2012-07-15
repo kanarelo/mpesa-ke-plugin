@@ -28,7 +28,7 @@ import org.smslib.stk.StkResponse;
 import org.smslib.stk.StkValuePrompt;
 
 @ConfigurableServiceProperties(name="MPESA Kenya Personal", icon="/icons/mpesa_ke_personal.png")
-public class MpesaPersonalService extends MpesaPaymentService {
+public class MpesaPersonalService extends AbstractMpesaPaymentService {
 //> MESSAGE CONTENT MATCHER CONSTANTS
 	private static final String INCOMING_PAYMENT_REGEX = "[A-Z0-9]+ Confirmed.\n" +
 			"You have received Ksh[,|.|\\d]+ from\n([A-Za-z ]+) 2547[\\d]{8}\non " +

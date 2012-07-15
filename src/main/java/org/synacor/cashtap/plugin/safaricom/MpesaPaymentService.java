@@ -31,7 +31,7 @@ import org.smslib.stk.StkRequest;
 import org.smslib.stk.StkResponse;
 import org.smslib.stk.StkValuePrompt;
 
-public abstract class MpesaPaymentService extends AbstractPaymentService {
+public abstract class MpesaPaymentService extends AbstractMpesaPaymentService {
 //> REGEX PATTERN CONSTANTS
 	protected Logger logger;
 	protected static final String AMOUNT_PATTERN = "Ksh[,|.|\\d]+";
@@ -72,8 +72,6 @@ public abstract class MpesaPaymentService extends AbstractPaymentService {
 			logDao.saveLogMessage(new LogMessage(LogMessage.LogLevel.INFO,"Payment Message",message.getTextContent()));
 		}
 	}
-	
-	
 	
 	public void sendAmountToPaybillAccount(final String businessName, final String businessNo, final String accountNo, final BigDecimal amount) {
 		//save outgoingpayment + create dummy client
