@@ -1,10 +1,10 @@
-package net.frontlinesms.plugins.payment.service.safaricomke;
+package org.synacor.cashtap.plugin.safaricom;
 
-import org.creditsms.plugins.paymentview.data.repository.PaymentServiceSettingsDao;
+import org.synacor.cashtap.models.daos.PaymentServiceSettingsDao;
 import org.springframework.context.ApplicationContext;
 
 import net.frontlinesms.FrontlineSMS;
-import net.frontlinesms.data.domain.PersistableSettings;
+import org.synacor.cashtap.models.PersistableSettings;
 import net.frontlinesms.events.EventBus;
 import net.frontlinesms.events.FrontlineEventNotification;
 import net.frontlinesms.junit.BaseTestCase;
@@ -12,7 +12,7 @@ import net.frontlinesms.messaging.sms.events.SmsModemStatusNotification;
 import net.frontlinesms.messaging.sms.modem.SmsModem;
 import net.frontlinesms.messaging.sms.modem.SmsModemStatus;
 import net.frontlinesms.plugins.payment.monitor.PaymentServiceMonitor;
-import net.frontlinesms.plugins.payment.service.PaymentServiceStartRequest;
+import org.synacor.cashtap.service.PaymentServiceStartRequest;
 
 import static org.mockito.Mockito.*;
 

@@ -1,4 +1,4 @@
-package net.frontlinesms.plugins.payment.service.safaricomke;
+package org.synacor.cashtap.plugin.safaricom;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -22,38 +22,38 @@ import java.util.List;
 import java.util.Set;
 
 import net.frontlinesms.FrontlineSMS;
-import net.frontlinesms.data.DuplicateKeyException;
-import net.frontlinesms.data.domain.FrontlineMessage;
-import net.frontlinesms.data.domain.PersistableSettings;
-import net.frontlinesms.data.events.EntitySavedNotification;
+import org.synacor.cashtap.models.DuplicateKeyException;
+import org.synacor.cashtap.models.FrontlineMessage;
+import org.synacor.cashtap.models.PersistableSettings;
+import org.synacor.cashtap.models.events.EntitySavedNotification;
 import net.frontlinesms.events.EventBus;
 import net.frontlinesms.events.EventObserver;
 import net.frontlinesms.events.FrontlineEventNotification;
 import net.frontlinesms.junit.BaseTestCase;
 import net.frontlinesms.messaging.sms.SmsServiceManager;
 import net.frontlinesms.messaging.sms.modem.SmsModem;
-import net.frontlinesms.plugins.payment.service.PaymentJob;
-import net.frontlinesms.plugins.payment.service.PaymentServiceException;
-import net.frontlinesms.plugins.payment.service.safaricomke.AbstractPaymentService;
-import net.frontlinesms.plugins.payment.service.safaricomke.MpesaPaymentService;
+import org.synacor.cashtap.service.PaymentJob;
+import org.synacor.cashtap.service.PaymentServiceException;
+import org.synacor.cashtap.plugin.safaricom.AbstractPaymentService;
+import org.synacor.cashtap.plugin.safaricom.MpesaPaymentService;
 import net.frontlinesms.serviceconfig.PasswordString;
 import net.frontlinesms.ui.UiGeneratorController;
 
 import org.apache.log4j.Logger;
-import org.creditsms.plugins.paymentview.PaymentViewPluginController;
-import org.creditsms.plugins.paymentview.analytics.TargetAnalytics;
-import org.creditsms.plugins.paymentview.data.domain.Account;
-import org.creditsms.plugins.paymentview.data.domain.Client;
-import org.creditsms.plugins.paymentview.data.domain.IncomingPayment;
-import org.creditsms.plugins.paymentview.data.domain.OutgoingPayment;
-import org.creditsms.plugins.paymentview.data.domain.OutgoingPayment.Status;
-import org.creditsms.plugins.paymentview.data.repository.AccountDao;
-import org.creditsms.plugins.paymentview.data.repository.ClientDao;
-import org.creditsms.plugins.paymentview.data.repository.IncomingPaymentDao;
-import org.creditsms.plugins.paymentview.data.repository.LogMessageDao;
-import org.creditsms.plugins.paymentview.data.repository.OutgoingPaymentDao;
-import org.creditsms.plugins.paymentview.data.repository.PaymentServiceSettingsDao;
-import org.creditsms.plugins.paymentview.data.repository.TargetDao;
+import org.synacor.cashtap.PaymentViewPluginController;
+import org.synacor.cashtap.analytics.TargetAnalytics;
+import org.synacor.cashtap.models.Account;
+import org.synacor.cashtap.models.User;
+import org.synacor.cashtap.models.IncomingPayment;
+import org.synacor.cashtap.models.OutgoingPayment;
+import org.synacor.cashtap.models.OutgoingPayment.Status;
+import org.synacor.cashtap.models.daos.AccountDao;
+import org.synacor.cashtap.models.daos.UserDao;
+import org.synacor.cashtap.models.daos.IncomingPaymentDao;
+import org.synacor.cashtap.models.daos.LogMessageDao;
+import org.synacor.cashtap.models.daos.OutgoingPaymentDao;
+import org.synacor.cashtap.models.daos.PaymentServiceSettingsDao;
+import org.synacor.cashtap.models.daos.TargetDao;
 import org.mockito.InOrder;
 import org.smslib.CService;
 import org.smslib.SMSLibDeviceException;
@@ -77,10 +77,10 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 	protected static final String ACCOUNTNUMBER_2_2 = "0700000022";
 	protected static final String ACCOUNTNUMBER_2_3 = "12345";
 	
-	protected Client CLIENT_0;
-	protected Client CLIENT_1;
-	protected Client CLIENT_2;
-	protected Client CLIENT_3;
+	protected User CLIENT_0;
+	protected User CLIENT_1;
+	protected User CLIENT_2;
+	protected User CLIENT_3;
 	
 	private CService cService;
 	private CATHandler_Wavecom_Stk aTHandler;
@@ -90,7 +90,7 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 	private StkMenuItem sendMoneyMenuItem;
 	
 	private StkMenu mpesaMenu;
-	private ClientDao clientDao;
+	private UserDao clientDao;
 	protected AccountDao accountDao;
 	private TargetDao targetDao;
 	private IncomingPaymentDao incomingPaymentDao;
@@ -194,7 +194,7 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 	    logMessageDao = mock(LogMessageDao.class);
 		
 		targetDao = mock(TargetDao.class);
-		clientDao = mock(ClientDao.class);
+		clientDao = mock(UserDao.class);
 		accountDao = mock(AccountDao.class);
 		targetAnalytics = mock(TargetAnalytics.class);
 		settingsDao = mock(PaymentServiceSettingsDao.class);
@@ -231,7 +231,7 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 		when(pluginController.getIncomingPaymentDao()).thenReturn(incomingPaymentDao);
 		when(pluginController.getLogMessageDao()).thenReturn(logMessageDao);
 		when(pluginController.getTargetDao()).thenReturn(targetDao);
-		when(pluginController.getClientDao()).thenReturn(clientDao);
+		when(pluginController.getUserDao()).thenReturn(clientDao);
 		when(pluginController.getUiGeneratorController()).thenReturn(ui);
 		when(pluginController.getTargetAnalytics()).thenReturn(targetAnalytics);
 		when(pluginController.getEventBus()).thenReturn(eventBus);
@@ -251,19 +251,19 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 		Set<Account> accounts2 = mockAccounts(ACCOUNTNUMBER_2_1, ACCOUNTNUMBER_2_2);
 		Set<Account> accounts3 = mockAccounts(ACCOUNTNUMBER_2_3);
 		
-	    CLIENT_0 = mockClient(0, PHONENUMBER_0, Collections.EMPTY_SET);
-	    CLIENT_1 = mockClient(1, PHONENUMBER_1, accounts1);
-	    CLIENT_2 = mockClient(2, PHONENUMBER_2, accounts2);
-	    CLIENT_3 = mockClient(3, PHONENUMBER_3, accounts3);
+	    CLIENT_0 = mockUser(0, PHONENUMBER_0, Collections.EMPTY_SET);
+	    CLIENT_1 = mockUser(1, PHONENUMBER_1, accounts1);
+	    CLIENT_2 = mockUser(2, PHONENUMBER_2, accounts2);
+	    CLIENT_3 = mockUser(3, PHONENUMBER_3, accounts3);
 
 	}
 	
-	private Client mockClient(long id, String phoneNumber, Set<Account> accounts) {
-		Client c = mock(Client.class);
+	private User mockUser(long id, String phoneNumber, Set<Account> accounts) {
+		User c = mock(User.class);
 		when(c.getId()).thenReturn(id);
-		when(clientDao.getClientByPhoneNumber(phoneNumber)).thenReturn(c);
-		when(accountDao.getAccountsByClientId(id)).thenReturn(new ArrayList<Account>(accounts));
-		when(accountDao.getActiveNonGenericAccountsByClientId(id)).thenReturn(new ArrayList<Account>(accounts));
+		when(clientDao.getUserByPhoneNumber(phoneNumber)).thenReturn(c);
+		when(accountDao.getAccountsByUserId(id)).thenReturn(new ArrayList<Account>(accounts));
+		when(accountDao.getActiveNonGenericAccountsByUserId(id)).thenReturn(new ArrayList<Account>(accounts));
 		when(c.getPhoneNumber()).thenReturn(phoneNumber);
 		return c;
 	}
@@ -439,7 +439,7 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 		// setup
 		assertTrue(mpesaPaymentService instanceof EventObserver);
 		OutgoingPayment payment = new OutgoingPayment();
-		payment.setClient(CLIENT_1);
+		payment.setUser(CLIENT_1);
 		payment.setAmountPaid(new BigDecimal(amount));
 		
 		payment.setConfirmationCode(confirmationCode);
@@ -573,9 +573,9 @@ public abstract class MpesaPaymentServiceTest<E extends MpesaPaymentService> ext
 		return m;
 	}
 	
-	private OutgoingPayment getOutgoingPayment(Client client){
+	private OutgoingPayment getOutgoingPayment(User client){
 		OutgoingPayment outgoingPayment = new OutgoingPayment();
-		outgoingPayment.setClient(client);
+		outgoingPayment.setUser(client);
 		outgoingPayment.setAmountPaid(new BigDecimal("500"));
 		outgoingPayment.getStatus();
 		outgoingPayment.setStatus(Status.CREATED);

@@ -1,1 +1,1 @@
-net.frontlinesms.plugins.payment.service.safaricomke.ServiceMonitor
+org.synacor.cashtap.plugin.safaricom.ServiceMonitor

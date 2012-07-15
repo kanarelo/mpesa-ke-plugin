@@ -1,4 +1,4 @@
-package net.frontlinesms.plugins.payment.service.safaricomke;
+package org.synacor.cashtap.plugin.safaricom;
 
 import java.util.List;
 

@@ -1,9 +1,9 @@
-package net.frontlinesms.plugins.payment.service.safaricomke;
+package org.synacor.cashtap.plugin.safaricom;
 
-import net.frontlinesms.plugins.payment.service.PaymentServiceException;
-import net.frontlinesms.plugins.payment.service.safaricomke.MpesaPayBillService;
+import org.synacor.cashtap.service.PaymentServiceException;
+import org.synacor.cashtap.plugin.safaricom.MpesaPayBillService;
 
-import org.creditsms.plugins.paymentview.data.domain.OutgoingPayment;
+import org.synacor.cashtap.models.OutgoingPayment;
 
 
 public class MpesaPayBillServiceTest extends

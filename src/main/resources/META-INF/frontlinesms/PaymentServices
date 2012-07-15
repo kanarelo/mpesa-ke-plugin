@@ -1,2 +1,2 @@
-net.frontlinesms.plugins.payment.service.safaricomke.MpesaPersonalService
-net.frontlinesms.plugins.payment.service.safaricomke.MpesaPayBillService
+org.synacor.cashtap.plugin.safaricom.MpesaPersonalService
+org.synacor.cashtap.plugin.safaricom.MpesaPayBillService

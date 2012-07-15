@@ -1,10 +1,10 @@
-package net.frontlinesms.plugins.payment.service.safaricomke;
+package org.synacor.cashtap.plugin.safaricom;
 
 import java.util.List;
 
 import net.frontlinesms.junit.BaseTestCase;
-import net.frontlinesms.plugins.payment.service.PaymentService;
-import net.frontlinesms.plugins.payment.service.PaymentServiceImplementationLoader;
+import org.synacor.cashtap.service.PaymentService;
+import org.synacor.cashtap.service.PaymentServiceImplementationLoader;
 
 public class ServiceLoaderTest extends BaseTestCase {
 	public void testPersonalServiceLoading() {

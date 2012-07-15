@@ -1,16 +1,16 @@
 /**
  * 
  */
-package net.frontlinesms.plugins.payment.service.safaricomke;
+package org.synacor.cashtap.plugin.safaricom;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.frontlinesms.data.DuplicateKeyException;
-import net.frontlinesms.plugins.payment.service.safaricomke.MpesaPersonalService;
+import org.synacor.cashtap.models.DuplicateKeyException;
+import org.synacor.cashtap.plugin.safaricom.MpesaPersonalService;
 
-import org.creditsms.plugins.paymentview.data.domain.OutgoingPayment;
+import org.synacor.cashtap.models.OutgoingPayment;
 
 import static org.mockito.Mockito.*;
 
@@ -26,7 +26,7 @@ public class MpesaPersonalServiceTest extends
 
 	protected void init() {
 		OutgoingPayment outgoingPayment = new OutgoingPayment();
-		outgoingPayment.setClient(CLIENT_1);
+		outgoingPayment.setUser(CLIENT_1);
 		outgoingPayment.setAmountPaid(new BigDecimal("1235"));
 		outgoingPayment.setConfirmationCode("BC77RI604");
 		outgoingPayment.setStatus(OutgoingPayment.Status.UNCONFIRMED);
