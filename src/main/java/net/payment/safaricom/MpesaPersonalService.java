@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import net.frontlinesms.data.DuplicateKeyException;
 import net.frontlinesms.data.domain.FrontlineMessage;
 import net.frontlinesms.plugins.payment.service.PaymentJob;
 import net.frontlinesms.plugins.payment.service.PaymentServiceException;
@@ -73,17 +72,13 @@ public class MpesaPersonalService extends MpesaPaymentService {
 		return super.isOutgoingPaymentEnabled();
 	}
 	
-	public void makePayment(final OutgoingPayment outgoingPayment)
-			throws PaymentServiceException {
-		final CService cService = smsModem.getCService();
+	public void makePayment(final OutgoingPayment outgoingPayment) throws PaymentServiceException {
 		final BigDecimal amount = outgoingPayment.getAmountPaid();
 		queueOutgoingJob(new PaymentJob() {
 			public void run() {
 				try {
 					cService.doSynchronized(new SynchronizedWorkflow<Object>() {
-						public Object run() throws SMSLibDeviceException,
-								IOException {
-
+						public Object run() throws SMSLibDeviceException, IOException {
 							initIfRequired();
 							updateStatus(PaymentStatus.SENDING);
 							final StkMenu mPesaMenu = getMpesaMenu();

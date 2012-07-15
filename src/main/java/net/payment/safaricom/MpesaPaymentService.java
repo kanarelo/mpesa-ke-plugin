@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 
-import net.frontlinesms.data.DuplicateKeyException;
 import net.frontlinesms.data.domain.Contact;
 import net.frontlinesms.data.domain.FrontlineMessage;
 import net.frontlinesms.plugins.payment.event.BalanceFraudNotification;
@@ -410,8 +409,7 @@ public abstract class MpesaPaymentService extends AbstractPaymentService {
 		updateBalance(actualBalance, getConfirmationCode(message), getTimePaid(message), "BalanceEnquiry");
 	}
 	
-	synchronized void performIncominPaymentFraudCheck(final FrontlineMessage message,
-			final IncomingPayment payment) {
+	synchronized void performIncominPaymentFraudCheck(final FrontlineMessage message, final IncomingPayment payment) {
 		//check is: Let Previous Balance be p, Current Balance be c and Amount received be a
 		final BigDecimal actualBalance = getBalance(message);
 		BigDecimal expectedBalance = payment.getAmountPaid().add(getBalanceAmount());
@@ -426,18 +424,15 @@ public abstract class MpesaPaymentService extends AbstractPaymentService {
 		actualBalance = actualBalance.setScale(2, BigDecimal.ROUND_HALF_DOWN);
 		expectedBalance = expectedBalance.setScale(2, BigDecimal.ROUND_HALF_DOWN);
 		if(expectedBalance.compareTo(new BigDecimal(0)) < 0) {
-			log.error("Balance for: "+ this.toString() +" is much lower than expected: " + actualBalance + " instead of: "+ expectedBalance);
+			//log.error("Balance for: "+ this.toString() +" is much lower than expected: " + actualBalance + " instead of: "+ expectedBalance);
 		} else if(expectedBalance.equals(actualBalance)) {
-			log.info("No Fraud occured!");
+			//log.info("No Fraud occured!");
 		} else {
 			String message = "Fraud commited on "+ this.toString() +"? Was expecting balance as: "+expectedBalance+", but was "+actualBalance;
 
-			logDao.saveLogMessage(
-					new LogMessage(LogMessage.LogLevel.WARNING,
-						   	message,
-						    messageContent));
-			log.warn(message);
-			this.eventBus.notifyObservers(new BalanceFraudNotification(message));
+			//LogMessage.LogLevel.WARNING,message,messageContent;
+			//log.warn(message);
+			//this.eventBus.notifyObservers(new BalanceFraudNotification(message));
 		}
 	}
 	
